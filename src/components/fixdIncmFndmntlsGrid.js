@@ -29,10 +29,10 @@ const aggregates = [
 const FixdIncmFundmntlsGrid = ({data}) => {
     debugger;
     const _export = React.useRef(null);
-
+    const _grid = React.useRef();
     const excelExport = () => {
     if (_export.current !== null) {
-        _export.current.save(resultState);
+        _export.current.save(data);
     }
   };
 
@@ -58,7 +58,10 @@ const FixdIncmFundmntlsGrid = ({data}) => {
     );
   }; 
 
-  const initialDataState = {};
+  const initialDataState = {
+    skip: 0,
+  take: 10,
+  };
   const [row, setRow] = useState(data);
   const [dataState, setDataState] = React.useState();
   const [resultState, setResultState] = React.useState(
@@ -67,10 +70,7 @@ const FixdIncmFundmntlsGrid = ({data}) => {
   //setResultState(process({data}, initialDataState))
   let total = row.length;
   let pageSize = 10;
-  const [page, setPage] = React.useState({
-    skip: 0,
-    take: pageSize
-  });
+  const [page, setPage] = React.useState(initialDataState);
   const onDataStateChange = React.useCallback((e) => {
    debugger;
     
@@ -85,26 +85,32 @@ const FixdIncmFundmntlsGrid = ({data}) => {
    setDataState(e.dataState);
   }, []);
 
-  const cellRender = (tdElement, cellProps) => {
-    {/*if (cellProps.rowType === "footer") {
-      debugger;
-      if (cellProps.field === "Shares") {
+  const NumberCell = (props) => {
+    return (
+        <td style={{ textAlign: 'right' }}>
+            {formatNumber(props.dataItem[props.field], "##,#.00")}
+        </td>
+    )
+}
+const RightNameHeader = (props) => {
+    return (
+        <a className="k-link" style={{
+            float: "right",
+        }} onClick={props.onClick}>
+            {/* <span className="k-icon k-i-cart" /> */}
+            <span
+                style={{
+                    // color: "#53d2fa",
+                }}
+            >
+                {props.title}
+            </span>
+            {props.children}
+        </a>
+    );
+};
 
-        return (
-          <td aria-colindex={cellProps.columnIndex} role={"gridcell"}>
-            Sum: {cellProps.dataItem.aggregates.Shares.sum}
-          </td>
-        );
-      }
-      if (cellProps.field === "Market") {
-
-        return (
-          <td aria-colindex={cellProps.columnIndex} role={"gridcell"}>
-            Sum: {cellProps.dataItem.aggregates.Market.sum}
-          </td>
-        );
-      }
-    }*/}
+  const cellRender = (tdElement, cellProps) => {    
     
     if (cellProps.rowType === "data")
     {
@@ -180,13 +186,18 @@ debugger
         <ExcelExport data={resultState} ref={_export}> 
        <Grid style={{ height: "650px" }}
             data={resultState}
-       
+            //data={resultState.slice(page.skip, page.skip + page.take)}
             groupable={{
               footer: "visible",
             }}
+
+           
             sortable={true}
+            skip={page.skip}
             pageable={{pageSize:true}}
-            //pageSize={pageSize}
+            pageSize={page.take}
+            total={resultState.length}
+            ref={_grid}
            // total={total}
            // filterable={true}
            onDataStateChange={onDataStateChange}
@@ -203,7 +214,7 @@ debugger
             Export to Excel
           </button>
         </GridToolbar>
-            <Column field="mtrtyYr" menu={true} title="Maturity Year" width="150px"  />
+            <Column field="mtrtyYr" menu={true} title="Maturity Year" cell={NumberCell} headerCell={RightNameHeader} width="150px"  />
             {/*<Column field="couponRate" menu={true} title="Coupon Rate" width="150px" />
             <Column field="maturityDt"  menu={true}  filter="date" title="Maturity Date" width="150px" />*/}
             <Column field="astShrtNm" menu={true}  title="Description" width="300px" />
@@ -221,9 +232,9 @@ debugger
         <Column field="investmentOfficer" title="Inv Officer" width="150px" />*/}
             
 
-            <Column field="shares" title="Shares" width="150px" filter="numeric" format="{0:n2}" footerCell={totalSum} filterable={false}/>
-            <Column field="market" title="Market($)" width="150px" format="{0:n2}" filter="numeric" footerCell={totalSum} filterable={false}/>
-            <Column field="yield" title="Yield%" width="150px" filter="numeric" format="{0:n2}" footerCell={avgYield}  filterable={false} />
+            <Column field="shares" title="Shares" width="150px" filter="numeric" format="{0:n2}" cell={NumberCell} headerCell={RightNameHeader}  footerCell={totalSum} filterable={false}/>
+            <Column field="market" title="Market($)" width="150px" format="{0:n2}" filter="numeric" cell={NumberCell} headerCell={RightNameHeader}  footerCell={totalSum} filterable={false}/>
+            <Column field="yield" title="Yield%" width="150px" filter="numeric" format="{0:n2}" cell={NumberCell} headerCell={RightNameHeader}  footerCell={avgYield}  filterable={false} />
 
             <Column field="moodyRating" menu={true} title="Moody Rating" width="150px" />
             <Column field="sPRating" menu={true} title="SP Rating" width="150px" />
